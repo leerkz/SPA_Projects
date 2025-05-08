@@ -11,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: 202054
@@ -118,4 +118,4 @@ jobs:
             docker compose up -d --build
 
             docker compose ps
-          EOF
+          
