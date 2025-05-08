@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+
         uses: actions/checkout@v4
 
       - name: Set up SSH
@@ -118,4 +118,4 @@ jobs:
             docker compose up -d --build
 
             docker compose ps
-          
+          EOF
