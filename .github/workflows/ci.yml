@@ -13,7 +13,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
+          POSTGRES_USER: as
           POSTGRES_PASSWORD: 202054
           POSTGRES_DB: homework
           DJANGO_SECRET_KEY : sk_test_51R6C6QKGhL0esuUxZnb82UpUTGeKBATsukJi31EpehP43A8mGmAxkgCwiINTKIpseXQBNa4hp8HAP803J5mZXp0A001wrBsW9K
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up SSH
