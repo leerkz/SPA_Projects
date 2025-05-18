@@ -1,7 +1,7 @@
 services:
   web:
     image: syrok32/lera:latest
-    command: sh -c "python manage.py collectstatic --noinput && gunicorn SPA_Project_.wsgi:application --bind 0.0.0.0:8000"
+    command: sh -c "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - static_volume:/code/staticfiles
     expose:
@@ -84,7 +84,7 @@ services:
 
   celery-beat:
     image: syrok32/lera:latest
-    command: celery -A SPA_Project_ beat --loglevel=info
+    command: celery -A config beat --loglevel=info
 
     depends_on:
       celery:
