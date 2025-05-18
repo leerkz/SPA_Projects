@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics, filters
+from rest_framework import filters, generics, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -25,21 +25,26 @@ class PaymentsViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentsSerializer
     queryset = Payments.objects.all()
     filter_backends = [filters.OrderingFilter]
-    filterset_fields = ['course', 'lesson', 'payment_method']
-    ordering_fields = ['payment_date']
+    filterset_fields = ["course", "lesson", "payment_method"]
+    ordering_fields = ["payment_date"]
+
 
 class CreatePaymentSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        course_id = request.data.get('course_id')
+        course_id = request.data.get("course_id")
         course = get_object_or_404(Course, id=course_id)
 
         # 1. Создаём продукт в Stripe
-        product = services.create_product(name=course.name, description=course.description or '')
+        product = services.create_product(
+            name=course.name, description=course.description or ""
+        )
 
         # 2. Создаём цену (предположим, course.price есть в центах, иначе умножь)
-        price = services.create_price(product_id=product.id, amount=int(course.price * 100))
+        price = services.create_price(
+            product_id=product.id, amount=int(course.price * 100)
+        )
 
         # 3. Создаём сессию
         session = services.create_checkout_session(
@@ -48,4 +53,4 @@ class CreatePaymentSessionView(APIView):
             cancel_url="http://localhost:8000/payment/cancel/",
         )
 
-        return Response({'checkout_url': session.url})
+        return Response({"checkout_url": session.url})

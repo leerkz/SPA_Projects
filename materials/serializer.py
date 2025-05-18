@@ -3,7 +3,6 @@ from rest_framework.serializers import ModelSerializer
 
 from materials.models import Course, Lesson, Subscription
 from materials.validators import LinkValidator
-from users.models import Payments
 
 
 class CourseSerializer(ModelSerializer):
@@ -11,10 +10,10 @@ class CourseSerializer(ModelSerializer):
 
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = "__all__"
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_authenticated:
             return obj.subscription_set.filter(user=user).exists()
         return False
@@ -23,8 +22,8 @@ class CourseSerializer(ModelSerializer):
 class LessonSerializer(ModelSerializer):
     class Meta:
         model = Lesson
-        fields = '__all__'
-        validators = [LinkValidator(field='link')]
+        fields = "__all__"
+        validators = [LinkValidator(field="link")]
 
 
 class CourseDetailSerializers(ModelSerializer):
@@ -33,15 +32,18 @@ class CourseDetailSerializers(ModelSerializer):
     subscription = serializers.SerializerMethodField()
 
     def get_subscription(self, course):
-        user = self.context['request'].user
-        return Subscription.objects.all().filter(user=user).filter(course=course).exists()
+        user = self.context["request"].user
+        return (
+            Subscription.objects.all().filter(user=user).filter(course=course).exists()
+        )
 
     def get_many_lesson(self, course):
         return Lesson.objects.filter(course=course).count()
 
     class Meta:
         model = Course
-        fields = ('title', 'description', 'many_lessons', 'subscription')
+        fields = ("title", "description", "many_lessons", "subscription")
+
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
