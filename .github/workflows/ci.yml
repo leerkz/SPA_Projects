@@ -1,0 +1,141 @@
+
+name: Django CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Run flake8
+        run: flake8 .
+
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 202054
+          POSTGRES_DB: homework
+
+          DJANGO_SECRET_KEY : sk_test_51R6C6QKGhL0esuUxZnb82UpUTGeKBATsukJi31EpehP43A8mGmAxkgCwiINTKIpseXQBNa4hp8HAP803J5mZXp0A001wrBsW9K
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      ENGINE: django.db.backends.postgresql_psycopg2
+      POSTGRES_DB : homework
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 202054
+      DJANGO_SECRET_KEY: sk_test_51R6C6QKGhL0esuUxZnb82UpUTGeKBATsukJi31EpehP43A8mGmAxkgCwiINTKIpseXQBNa4hp8HAP803J5mZXp0A001wrBsW9K
+
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python manage.py test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/lera:${{ github.sha }} .
+          docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/lera:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/lera:latest
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/lera:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/lera:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Verify server structure
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "ls -la ~/lera"
+
+      - name: Prepare deployment files
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          chmod 600 .env
+
+      - name: Sync necessary files
+        run: |
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+            ./docker-compose.yml \
+            ./.env \
+            ./nginx \
+            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/lera/
+
+      - name: Deploy application
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
+            cd ~/lera
+            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | \
+              docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+            docker compose down --remove-orphans
+            docker compose pull
+            docker compose up -d --build
+
+            docker compose ps
+          EOF

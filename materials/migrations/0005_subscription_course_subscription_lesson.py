@@ -8,19 +8,29 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('materials', '0004_subscription'),
+        ("materials", "0004_subscription"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='subscription',
-            name='course',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='materials.course', verbose_name='Подписка на курс'),
+            model_name="subscription",
+            name="course",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="materials.course",
+                verbose_name="Подписка на курс",
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='subscription',
-            name='lesson',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='materials.lesson'),
+            model_name="subscription",
+            name="lesson",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="materials.lesson",
+            ),
         ),
     ]
