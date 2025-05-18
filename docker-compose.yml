@@ -61,10 +61,10 @@ services:
 
   celery:
     image: syrok32/lera:latest
-    command: celery -A SPA_Project_ worker --loglevel=info
+    command: celery -A config  worker --loglevel=info
     user: "1000:1000"
     healthcheck:
-      test: [ "CMD", "celery", "-A", "SPA_Project_", "inspect", "ping" ]
+      test: [ "CMD", "celery", "-A", "config", "inspect", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
